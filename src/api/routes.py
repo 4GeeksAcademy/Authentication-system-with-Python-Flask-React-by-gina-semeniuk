@@ -6,6 +6,7 @@ from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
+
 api = Blueprint('api', __name__)
 
 
@@ -26,8 +27,14 @@ def register():
     name = data.get("name")
     last_name = data.get("last_name")
 
+   
+    new_user = User(email=email, password=password, name=name, last_name=last_name)
 
 
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"message": "Usuario registrado exitosamente"}), 200
 
 @api.route("/login", methods=["POST"])
 def login():
