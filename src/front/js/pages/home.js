@@ -2,6 +2,7 @@ import React, { useContext} from "react";
 import { Context} from "../store/appContext";
 import "../../styles/home.css";
 import { Register } from "../component/register";
+import { Login } from "../pages/login";
 import { useNavigate } from "react-router-dom";
 
 export const Home = () => {
@@ -10,11 +11,10 @@ export const Home = () => {
   
 	const handleRegisterClick = () => {
 	  navigate("/register");
-	};
+
+	}
 	const handleLoginClick = () => {
-		// Your login logic here
-		// For example, you can navigate to the login page using navigate("/login")
-		// or perform any other login-related actions
+			navigate("/login");
 	  };
   
 	  return (

@@ -1,7 +1,7 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
-			user: [],
+			
 			message: null,
 			demo: [
 				{
@@ -14,7 +14,16 @@ const getState = ({ getStore, getActions, setStore }) => {
 					background: "white",
 					initial: "white"
 				}
-			]
+			],
+
+			isAuthenticated: false,
+			auth: false,
+			token: null,
+			user: null,
+			email: null,
+			
+			
+		
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
@@ -48,30 +57,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 				//reset the global store
 				setStore({ demo: demo });
 			},
-			
-			registerUser: async (user) => {
-				try {
-				  const response = await fetch(process.env.BACKEND_URL + "api/register", {
-					method: "POST",
-					headers: {
-					  "Content-Type": "application/json",
-					},
-					body: JSON.stringify(user),
-				  });
-		
-				  if (response.ok) {
-					console.log("Usuario registrado exitosamente");
-				  } else {
-					console.error("Error al registrar el usuario");
-				  }
-				} catch (error) {
-				  console.error("Error al realizar la solicitud", error);
-				}
-			  },
-			  isAuthenticated: (token) => {
-				console.log(token);
-
-
+			isAuthenticated: (token) => {
 				const options = {
 					method: 'POST',
 					headers: {
@@ -80,64 +66,55 @@ const getState = ({ getStore, getActions, setStore }) => {
 					},
 					body: JSON.stringify({})
 				};
-
-				fetch(process.env.BACKEND_URL + "/api/private", options)
+			
+				fetch(process.env.BACKEND_URL + "api/private", options)
 					.then(response => {
 						if (response.status === 200) {
 							return response.json();
 						} else {
-							throw new Error("There was a problem in the login request");
+							throw Error("There was a problem in the login request");
 						}
 					})
 					.then(response => {
-						console.log(response)
-						setStore({ storeToken: true });
+						setStore({ auth: true, token: token, userName: response.userName });
 					})
 					.catch(error => console.log('error', error));
 			},
-			login: (email, password) => {
-				return new Promise((resolve, reject) => {
-					fetch(process.env.BACKEND_URL + "/api/login", {
+			  
+			  signOut: () => {
+				localStorage.removeItem("token");
+				setStore({ auth: false }); 
+			  },
+			
+		
+			  login: async (email, password) => {
+				try {
+					const response = await fetch(process.env.BACKEND_URL + "/api/login", {
 						method: "POST",
 						headers: {
-							"Content-Type": "application/json",
+							"Content-Type": "application/json"
 						},
 						body: JSON.stringify({ email, password }),
-					})
-						.then((response) => response.json())
-						.then((data) => {
-							console.log(data);
-							if (data.token) {
-								localStorage.setItem("token", data.token);
-								localStorage.setItem("userName", data.user.name);
-								localStorage.setItem("userLastName", data.user.last_name)
-								localStorage.setItem("email", data.user.email);
-								
-
-								setStore({ userName: data.user.name });
-								setStore({ email: data.user.email });
-								setStore({ token: data.token });
-								setStore({ auth: true });
-								setStore({ userId: data.user.id });
-								setStore({ userLastName: data.user.last_name });
-							
-								resolve(true);
-							} else {
-								console.log("Password or mail incorrect");
-								resolve(false);
-							}
-						})
-						.catch((error) => {
-							console.error(error);
-							reject(error);
-						});
-				});
-			},
-			signOut: () => {
-				localStorage.removeItem("token");
-				setStore({ auth: false })
-			},
-			},
-		  };
+					});
+				
+					const data = await response.json();
+				
+					if (response.status === 200 && data.token) {
+						localStorage.setItem("token", data.token);
+						setStore({ auth: true, userName: data.userName });
+						getActions().isAuthenticated(data.token); 
+						return true;
+					} else {
+						console.log("Password or email incorrect");
+						return false;
+					}
+				} catch (error) {
+					console.error(error);
+					return false;
+				}
+			}
+				}
+			}
 		};
+
 export default getState;

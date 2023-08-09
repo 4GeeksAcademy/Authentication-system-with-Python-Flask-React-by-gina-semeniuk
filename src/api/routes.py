@@ -22,24 +22,41 @@ def handle_hello():
 @api.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
+    #print(data)
     name = data.get("name")
     last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+    
 
-   
-    new_user = User(email=email, password=password, name=name, last_name=last_name)
 
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"})
+    
+    existing_user_email = User.query.filter_by(email=email).first()
+    
+    if existing_user_email:
+        return jsonify({"message": "User with this email already exists"})
+    
+    
+
+    new_user = User(
+        name=name,
+        last_name=last_name,
+        email=email,
+        password=password,
+       
+    )
 
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "Usuario registrado exitosamente"}), 200
+    return jsonify({"message": "User registered successfully"})
 
 @api.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-    #print(data)
+    print(data)
     email = data.get("email")
     password = data.get("password")
     
@@ -47,12 +64,13 @@ def login():
     if not email or not password:
         return jsonify({"message": "Email and password are required"}), 400
     user = User.query.filter_by(email=email).first()
-    #print(user)
+    print(user)
 
     if not user:
         return jsonify({"message": "User doesn't exist"}), 401
     token = create_access_token(identity=user.id)
     #print(token)
+
 
 
     token = create_access_token(identity=user.id)
@@ -66,26 +84,25 @@ def login():
         200,
     )
 
-
-@api.route("/private", methods=["POST"])
+@api.route('/private', methods=['POST'])
 @jwt_required()
-def validate_token():
+def get_authenticated_user():
     current_user_id = get_jwt_identity()
     user = User.query.filter_by(id=current_user_id).first()
-    
+
     if user is None:
-        raise APIException("User not found", status_code=404)
-    
-    return jsonify("User authenticated"), 200
+        return jsonify({"message": "User not found"}), 404
 
+    return jsonify(user.serialize()), 200
+   
 
-@api.route("/private", methods=["GET"])
+@api.route('/private/name', methods=['GET'])
 @jwt_required()
-def get_user_info():
+def get_user_name():
     current_user_id = get_jwt_identity()
     user = User.query.filter_by(id=current_user_id).first()
-    
+
     if user is None:
         return jsonify({"message": "User not found"}), 404
     
-    return jsonify(message="Welcome, {}".format(user.name)), 200
+    return jsonify({"name": user.name}), 200

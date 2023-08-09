@@ -1,14 +1,17 @@
 import React, { useContext, useState } from "react";
 import { Context } from "../store/appContext";
 import "../../styles/register.css";
+import { useNavigate } from "react-router-dom";
 
 export const Register = () => {
-  const { actions } = useContext(Context);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const navigate = useNavigate();
+  const { store, actions } = useContext(Context);
   const [name, setName] = useState("");
   const [last_name, setLastName] = useState("");
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleRegister = async () => {
     const userData = {
@@ -17,12 +20,25 @@ export const Register = () => {
       name: name,
       last_name: last_name,
     };
-
-    try {
-      await actions.registerUser(userData);
-      setShowSuccessMessage(true); 
-    } catch (error) {
-      console.error("Error al registrar el usuario", error);
+  
+    const response = await fetch(process.env.BACKEND_URL + "/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+    const data = await response.json();
+  
+    if (response.status === 200 && data.message === "User registered successfully") {
+      setShowSuccessMessage(true);
+      setAlertMessage("User registered successfully!");
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        navigate("/login");
+      }, 3000);
+    } else {
+      setAlertMessage(data.message);
     }
   };
 
@@ -73,9 +89,9 @@ export const Register = () => {
               Registrar
             </button>
 
-            {showSuccessMessage && (
-              <div className="success-message">
-                ¡Usuario registrado exitosamente!
+            {alertMessage && (
+              <div className="error-message">
+                {alertMessage}
               </div>
             )}
           </form>
